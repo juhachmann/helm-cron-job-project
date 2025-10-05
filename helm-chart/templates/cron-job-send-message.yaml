@@ -1,0 +1,49 @@
+# A CronJob creates Jobs on a repeating schedule.
+
+# CronJob is meant for performing regular scheduled actions such as backups, report generation, and so on. One CronJob object is like one line of a crontab (cron table) file on a Unix system. It runs a Job periodically on a given schedule, written in Cron format.
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: send-sqs-message
+spec:
+  schedule: "{{ .Values.jobs.schedule }}"
+  jobTemplate:
+    spec:
+    spec:
+      successfulJobsHistoryLimit: 3   # Mantém até 3 Jobs bem-sucedidos
+      failedJobsHistoryLimit: 1       # Mantém até 1 Job com falha
+      backoffLimit: 4 # Número máximo de vezes que irá reiniciar em caso de falha
+      template:
+        spec:
+          restartPolicy: OnFailure
+          initContainers:
+            - name: wait-for-localstack-from-cron
+              image: curlimages/curl:7.88.1
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  until curl --max-time 2 -s http://{{ .Values.localstack.serviceName }}:{{ .Values.localstack.servicePort }}; do
+                    echo "Esperando LocalStack..."
+                    sleep 5
+                  done
+          containers:
+            - name: sender
+              image: localstack/localstack:latest
+              command: ["/bin/bash", "-c", "/scripts/send-message.sh"]
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  value: test
+                - name: AWS_SECRET_ACCESS_KEY
+                  value: test
+                - name: AWS_ENDPOINT_URL
+                  value: "http://{{ .Values.localstack.serviceName }}:{{ .Values.localstack.servicePort }}"
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+          volumes:
+            - name: scripts
+              configMap:
+                name: localstack-scripts
+                defaultMode: 0755

@@ -1,0 +1,7 @@
+# Metadados do chart
+
+apiVersion: v2
+name: localstack-sqs-bucket
+description: LocalStack + S3 + SQS + message sender job
+version: 0.1.0
+appVersion: "1.0"

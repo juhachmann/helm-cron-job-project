@@ -1,0 +1,28 @@
+# A Deployment manages a set of Pods to run an application workload, usually one that doesn't maintain state.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localstack
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      containers:
+        - name: localstack
+          image: {{ .Values.localstack.image }}
+          ports:
+            - containerPort: {{ .Values.localstack.servicePort }}
+          env:
+            - name: SERVICES
+              value: "s3,sqs"
+            - name: EDGE_PORT
+              value: "{{ .Values.localstack.servicePort }}"
+            - name: DEFAULT_REGION
+              value: "us-east-1"

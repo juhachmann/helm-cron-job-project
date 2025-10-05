@@ -1,0 +1,44 @@
+# Jobs represent one-off tasks that run to completion and then stop.
+# A Job creates one or more Pods and will continue to retry execution of the Pods until a specified number of them successfully terminate.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-localstack-resources
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+      - name: wait-for-localstack-from-job
+        image: curlimages/curl:7.88.1
+        command:
+          - /bin/sh
+          - -c
+          - |
+            until curl --max-time 2 -s http://{{ .Values.localstack.serviceName }}:{{ .Values.localstack.servicePort }}; do
+              echo "Esperando LocalStack..."
+              sleep 5
+            done
+      containers:
+        - name: init
+          image: localstack/localstack:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - /scripts/init.sh && /scripts/init.sh
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: test
+            - name: AWS_SECRET_ACCESS_KEY
+              value: test
+            - name: AWS_ENDPOINT_URL
+              value: "http://{{ .Values.localstack.serviceName }}:{{ .Values.localstack.servicePort }}"
+
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: localstack-scripts
+            defaultMode: 0755

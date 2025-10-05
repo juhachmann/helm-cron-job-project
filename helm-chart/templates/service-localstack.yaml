@@ -1,0 +1,14 @@
+# In Kubernetes, a Service is a method for exposing a network application that is running as one or more Pods in your cluster.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.localstack.serviceName }}
+spec:
+  selector:
+    app: localstack
+  ports:
+    - name: edge
+      port: {{ .Values.localstack.servicePort }}
+      targetPort: {{ .Values.localstack.servicePort }}
+  type: ClusterIP

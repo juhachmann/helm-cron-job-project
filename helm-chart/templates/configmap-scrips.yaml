@@ -1,0 +1,26 @@
+# A ConfigMap is an API object used to store non-confidential data in key-value pairs. Pods can consume ConfigMaps as environment variables, command-line arguments, or as configuration files in a volume.
+
+# Diferentemente do values, o configMap é diretamente utilizado pelo kubernetes durante o gerenciamento dos recursos
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: localstack-scripts
+data:
+  init.sh: |
+    #!/bin/bash
+    set -e
+    echo "Creating S3 bucket and SQS queue..."
+    awslocal s3 mb s3://{{ .Values.localstack.s3BucketName }}
+    awslocal sqs create-queue --queue-name {{ .Values.localstack.sqsQueueName }}
+    echo "Resources created successfully!"
+
+  send-message.sh: |
+    #!/bin/bash
+    TIMESTAMP="at $(date +'%Y-%m-%d %H:%M:%S')"
+    set -e
+    echo "Sending message to SQS queue..."
+    awslocal sqs send-message \
+      --queue-url http://{{ .Values.localstack.serviceName }}:{{ .Values.localstack.servicePort }}/000000000000/{{ .Values.localstack.sqsQueueName }} \
+      --message-body "{{ .Values.jobs.message }} $TIMESTAMP"
+    echo "Message sent!"

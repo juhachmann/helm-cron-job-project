@@ -1,0 +1,12 @@
+# Variáveis usadas pelos templates no chart
+
+localstack:
+  image: localstack/localstack:latest
+  servicePort: 4566
+  s3BucketName: my-test-bucket
+  sqsQueueName: my-test-queue
+  serviceName: localstack
+
+jobs:
+  schedule: "*/1 * * * *" # every 1 minute
+  message: "Hello from Helm Job"
